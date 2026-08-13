@@ -217,8 +217,8 @@
 }
 
 .emptyArt {
-  width: 120px;
-  height: 92px;
+  width: calc(var(--space-30) + var(--space-30));
+  height: calc(var(--space-23) + var(--space-23));
   border: var(--border-width) solid var(--color-border-primary-soft);
   border-radius: var(--radius-lg);
   background: var(--color-bg-primary-badge);
@@ -226,7 +226,7 @@
 
 @keyframes spin {
   to {
-    transform: rotate(360deg);
+    transform: rotate(1turn);
   }
 }
 
@@ -237,7 +237,7 @@
   }
 }
 
-@media (min-width: 820px) {
+@media (min-width: calc(820 * 1px)) {
   .header {
     grid-template-columns: 1fr auto;
     align-items: start;
