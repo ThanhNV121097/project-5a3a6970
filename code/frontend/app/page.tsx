@@ -1,4 +1,4 @@
-import { AddTodoTask } from './components/AddTodoTask';
+import { AddTodoTask } from '../components/AddTodoTask';
 
 export default function Page() {
   return (
