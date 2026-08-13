@@ -2,7 +2,6 @@
 
 import { FormEvent, useEffect, useRef, useState } from 'react';
 import { createTodoMock, initialTodosResponse, TodoTask } from '../lib/mock/add-todo-task';
-import styles from './AddTodoTask.module.css';
 
 const maxTitleLength = 120;
 
@@ -11,8 +10,8 @@ export function AddTodoTask() {
   const [title, setTitle] = useState('');
   const [tasks, setTasks] = useState<TodoTask[]>(initialTodosResponse.tasks);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formError, setFormError] = useState('');
   const [listState, setListState] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [formError, setFormError] = useState('');
 
   useEffect(() => {
     const timer = window.setTimeout(() => setListState('ready'), 650);
@@ -52,74 +51,60 @@ export function AddTodoTask() {
   }
 
   return (
-    <section className={styles.panel} aria-labelledby="add-task-title">
-      <div className={styles.header}>
-        <div>
-          <p className={styles.eyebrow}>Todo App</p>
-          <h2 id="add-task-title" className={styles.title}>Add todo task</h2>
-          <p className={styles.muted}>Create one task at a time. Duplicate titles are allowed.</p>
-        </div>
-        <div className={styles.stats} aria-label="Task summary">
-          <span><strong>{tasks.length}</strong>Total</span>
-          <span><strong>{tasks.filter((task) => !task.is_completed).length}</strong>Open</span>
-        </div>
-      </div>
+    <section className="panel" aria-labelledby="add-task-title">
+      <p className="eyebrow">Personal task manager</p>
+      <h1 id="add-task-title">Todo App</h1>
+      <p className="lede">Add a task by title. New tasks appear here without reloading.</p>
 
-      <form className={styles.form} onSubmit={handleSubmit} noValidate>
-        <label className={styles.label} htmlFor="todo-title">Task title</label>
-        <div className={styles.formRow}>
-          <input
-            ref={inputRef}
-            id="todo-title"
-            className={styles.input}
-            value={title}
-            onChange={(event) => {
-              setTitle(event.target.value);
-              setFormError('');
-            }}
-            aria-describedby={formError ? 'todo-title-help todo-title-error' : 'todo-title-help'}
-            aria-invalid={Boolean(formError)}
-            maxLength={maxTitleLength + 1}
-            placeholder="Buy milk"
-            disabled={isSubmitting}
-          />
-          <button className={styles.button} type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Saving…' : 'Add task'}
-          </button>
-        </div>
-        <p id="todo-title-help" className={styles.helper}>Trimmed title must be 1–120 characters.</p>
-        {formError ? <p id="todo-title-error" className={styles.error} role="alert">{formError}</p> : null}
+      <form onSubmit={handleSubmit} noValidate>
+        <label htmlFor="todo-title">Task title</label>
+        <input
+          ref={inputRef}
+          id="todo-title"
+          className="input"
+          value={title}
+          onChange={(event) => {
+            setTitle(event.target.value);
+            setFormError('');
+          }}
+          aria-describedby={formError ? 'todo-title-help todo-title-error' : 'todo-title-help'}
+          aria-invalid={Boolean(formError)}
+          maxLength={maxTitleLength + 1}
+          placeholder="Buy milk"
+          disabled={isSubmitting}
+        />
+        <p id="todo-title-help" className="muted">Trimmed title must be 1–120 characters.</p>
+        {formError ? <p id="todo-title-error" className="error" role="alert">{formError}</p> : null}
+        <button className="btn" type="submit" disabled={isSubmitting}>{isSubmitting ? 'Saving…' : 'Add task'}</button>
       </form>
 
-      <div className={styles.listWrap} aria-live="polite">
-        {listState === 'loading' ? (
-          <div className={styles.loading} role="status"><span className={styles.spinner} aria-hidden="true" />Loading tasks from database…</div>
-        ) : null}
+      <section aria-labelledby="todo-list-title" aria-live="polite">
+        <h2 id="todo-list-title">Your tasks</h2>
+        {listState === 'loading' ? <div className="state-box" role="status">Loading tasks from database…</div> : null}
         {listState === 'error' ? (
-          <div className={styles.errorBox} role="alert">
+          <div className="state-box" role="alert">
             <strong>Could not load tasks.</strong>
-            <span>Use retry to return to the add task flow.</span>
-            <button className={styles.secondaryButton} type="button" onClick={() => setListState('loading')}>Retry</button>
+            <p>Use retry to return to the add task flow.</p>
+            <button className="btn" type="button" onClick={() => setListState('loading')}>Retry</button>
           </div>
         ) : null}
         {listState === 'ready' && tasks.length === 0 ? (
-          <div className={styles.empty}>
-            <div className={styles.emptyArt} aria-hidden="true" />
+          <div className="state-box">
             <strong>No tasks yet</strong>
-            <span>Add one task to start.</span>
+            <p>Add one task to start.</p>
           </div>
         ) : null}
         {listState === 'ready' && tasks.length > 0 ? (
-          <ul className={styles.list}>
+          <ul>
             {tasks.map((task) => (
-              <li className={styles.item} key={task.id}>
-                <button className={styles.toggle} type="button" aria-label={`Mark ${task.title} complete`} disabled />
+              <li key={task.id}>
+                <button type="button" aria-label={`Mark ${task.title} complete`} disabled>□</button>
                 <span>{task.title}</span>
               </li>
             ))}
           </ul>
         ) : null}
-      </div>
+      </section>
     </section>
   );
 }
