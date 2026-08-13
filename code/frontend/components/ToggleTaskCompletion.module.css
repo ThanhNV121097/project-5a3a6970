@@ -232,12 +232,12 @@
 
 @keyframes enter {
   from {
-    opacity: 0;
+    opacity: var(--space-0);
     transform: translateY(var(--space-4));
   }
 }
 
-@media (min-width: calc(820 * 1px)) {
+@media (min-width: 820px) {
   .header {
     grid-template-columns: 1fr auto;
     align-items: start;
