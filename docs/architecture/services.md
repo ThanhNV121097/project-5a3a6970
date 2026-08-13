@@ -113,6 +113,28 @@ Frontend also validates for immediate accessible feedback, but API validation is
 - `DELETE /api/v1/todos/{todo_id}` is HTTP-idempotent; deleting an already missing todo returns `204 No Content` to support repeated delete controls and SRS not-found behavior.
 - No idempotency key store exists in v1.
 
+### 2.7 Reviewed mock contract for Persist and list tasks
+
+UI PR #16 mock module `code/frontend/lib/mock/persist-and-list-tasks.ts` defines this wire shape:
+
+```ts
+export type TodoTask = {
+  id: string;
+  title: string;
+  is_completed: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type TodoListResponse = {
+  tasks: TodoTask[];
+  next_cursor: string | null;
+  has_more: boolean;
+};
+```
+
+The API matches this shape exactly for `GET /api/v1/todos`. Error responses use existing project envelope. The UI mock narrows list error codes to `BAD_REQUEST`, `RATE_LIMITED`, `INTERNAL`, and `UNAVAILABLE`; service contract keeps same set for GET.
+
 ## 3. Endpoints
 
 ### 3.1 `GET /api/v1/todos`
@@ -164,10 +186,10 @@ No request body. If a body is sent, server ignores it only when empty; malformed
 |---|---|---|
 | `BAD_REQUEST` | 400 | Non-empty malformed request body or unsupported `Content-Type` with body. |
 | `RATE_LIMITED` | 429 | Caller exceeds rate limit. |
-| `INTERNAL` | 500 | Unexpected server error. |
+| `INTERNAL` | 500 | Unexpected server error or persisted row violates required API shape while mapping. |
 | `UNAVAILABLE` | 503 | Database unavailable, migration not ready, or server shutting down. |
 
-**Notes** — no side effects. Timeout: API aborts database query after 2 seconds. No retries inside API for database query; caller may retry via UI retry action after failure. If data integrity violation is detected while mapping rows, return `INTERNAL`; log row ID and request ID, not full list.
+**Notes** — no side effects. Timeout: API aborts database query after 2 seconds. No retries inside API for database query; caller may retry via UI retry action after failure. Query uses `SELECT id, title, is_completed, created_at, updated_at FROM todos ORDER BY created_at DESC, id DESC LIMIT 100`. If data integrity violation is detected while mapping rows, return `INTERNAL`; log row ID and request ID, not full list.
 
 ### 3.2 `POST /api/v1/todos`
 
@@ -416,7 +438,16 @@ No third-party integrations exist. No secrets or provider setup required beyond 
 | `DELETE /api/v1/todos/{todo_id}` | TODOS-004 |
 | `GET /healthz` | Architecture overview runtime contract |
 
-## 10. Open questions
+## 10. Migration plan for Persist and list tasks
+
+| Step | Forward | Backward | Safe on populated tables |
+|---|---|---|---|
+| 1 | Apply existing initial migration that creates `todos` and `idx_todos_created_at_id`. | Drop `todos` through existing down migration only in rollback/test environments. | Forward safe before product data. Backward destructive once tasks exist. |
+| 2 | No extra DDL for TODOS-002. API reads existing columns and returns reviewed mock envelope. | No rollback action. | Safe on populated `todos`; read-only list endpoint changes no data. |
+
+Backend story must replace any placeholder migration with the ERD-backed `todos` schema before enabling `GET /api/v1/todos`.
+
+## 11. Open questions
 
 | Question | Owner | Blocking |
 |---|---|---|
