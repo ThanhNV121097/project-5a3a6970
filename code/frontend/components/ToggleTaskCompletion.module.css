@@ -210,6 +210,7 @@
   border: var(--border-width-focus) solid var(--color-border-primary-soft);
   border-top-color: var(--color-primary);
   border-radius: var(--radius-full);
+  animation: spin var(--duration-load) var(--easing-spinner) infinite;
 }
 
 .emptyArt {
@@ -220,9 +221,17 @@
   background: var(--color-bg-primary-badge);
 }
 
+@keyframes spin {
+  to {
+    transform: rotate(1turn);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .secondaryButton {
+  .secondaryButton,
+  .spinner {
     transition: none;
+    animation: none;
   }
 
   .secondaryButton:hover {
