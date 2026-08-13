@@ -96,7 +96,6 @@ func (a *api) health(w http.ResponseWriter, r *http.Request) {
 		writeError(w, requestID, "BAD_REQUEST", "Unsupported method.", nil, http.StatusBadRequest)
 		return
 	}
-
 	ctx, cancel := context.WithTimeout(r.Context(), time.Second)
 	defer cancel()
 	if err := a.pool.Ping(ctx); err != nil {
@@ -126,13 +125,11 @@ func (a *api) todoByID(w http.ResponseWriter, r *http.Request) {
 	if !a.allow(w, r, requestID) {
 		return
 	}
-
 	id := strings.TrimPrefix(r.URL.Path, "/api/v1/todos/")
 	if id == "" || strings.Contains(id, "/") || !isUUID(id) {
 		writeError(w, requestID, "BAD_REQUEST", "Invalid task ID.", nil, http.StatusBadRequest)
 		return
 	}
-
 	switch r.Method {
 	case http.MethodPatch:
 		a.patchTodo(w, r, requestID, id)
@@ -148,7 +145,6 @@ func (a *api) listTodos(w http.ResponseWriter, r *http.Request, requestID string
 		writeError(w, requestID, "BAD_REQUEST", err.Error(), nil, http.StatusBadRequest)
 		return
 	}
-
 	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
 	defer cancel()
 	rows, err := a.pool.Query(ctx, `SELECT id::text, title, is_completed, created_at, updated_at FROM todos ORDER BY created_at DESC, id DESC LIMIT 100`)
@@ -157,7 +153,6 @@ func (a *api) listTodos(w http.ResponseWriter, r *http.Request, requestID string
 		return
 	}
 	defer rows.Close()
-
 	tasks := []todo{}
 	for rows.Next() {
 		var t todo
@@ -175,29 +170,26 @@ func (a *api) listTodos(w http.ResponseWriter, r *http.Request, requestID string
 }
 
 func (a *api) createTodo(w http.ResponseWriter, r *http.Request, requestID string) {
-	var raw map[string]json.RawMessage
-	if !decodeJSON(w, r, requestID, &raw) {
+	body, ok := readJSONBody(w, r, requestID)
+	if !ok {
 		return
 	}
-	for key := range raw {
-		if key != "title" {
-			writeError(w, requestID, "BAD_REQUEST", "Unknown field.", []fieldError{{Field: key, Code: "UNKNOWN", Message: "Unknown field."}}, http.StatusBadRequest)
-			return
-		}
+	titleValue, exists := body["title"]
+	if extra := unknownFields(body, "title"); len(extra) > 0 {
+		writeError(w, requestID, "BAD_REQUEST", "Unknown field.", []fieldError{{Field: extra[0], Code: "UNKNOWN", Message: "Field is not supported."}}, http.StatusBadRequest)
+		return
 	}
-
-	v, ok := raw["title"]
-	if !ok {
+	if !exists {
 		writeError(w, requestID, "VALIDATION_FAILED", "Title is required.", []fieldError{{Field: "title", Code: "REQUIRED", Message: "Title is required."}}, http.StatusUnprocessableEntity)
 		return
 	}
-	var title string
-	if err := json.Unmarshal(v, &title); err != nil {
+	title, ok := titleValue.(string)
+	if !ok {
 		writeError(w, requestID, "VALIDATION_FAILED", "Title must be text.", []fieldError{{Field: "title", Code: "TYPE", Message: "Title must be text."}}, http.StatusUnprocessableEntity)
 		return
 	}
 	title = strings.TrimSpace(title)
-	if len([]rune(title)) == 0 {
+	if title == "" {
 		writeError(w, requestID, "VALIDATION_FAILED", "Title is required.", []fieldError{{Field: "title", Code: "REQUIRED", Message: "Title is required."}}, http.StatusUnprocessableEntity)
 		return
 	}
@@ -205,7 +197,6 @@ func (a *api) createTodo(w http.ResponseWriter, r *http.Request, requestID strin
 		writeError(w, requestID, "VALIDATION_FAILED", "Title must be 120 characters or fewer.", []fieldError{{Field: "title", Code: "TOO_LONG", Message: "Title must be 120 characters or fewer."}}, http.StatusUnprocessableEntity)
 		return
 	}
-
 	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
 	defer cancel()
 	var t todo
@@ -217,33 +208,30 @@ func (a *api) createTodo(w http.ResponseWriter, r *http.Request, requestID strin
 	w.Header().Set("Location", "/api/v1/todos/"+t.ID)
 	writeJSON(w, http.StatusCreated, t)
 }
+
 func (a *api) patchTodo(w http.ResponseWriter, r *http.Request, requestID, id string) {
-	var raw map[string]json.RawMessage
-	if !decodeJSON(w, r, requestID, &raw) {
+	body, ok := readJSONBody(w, r, requestID)
+	if !ok {
 		return
 	}
-	for key := range raw {
-		if key != "is_completed" {
-			writeError(w, requestID, "BAD_REQUEST", "Unknown field.", []fieldError{{Field: key, Code: "UNKNOWN", Message: "Unknown field."}}, http.StatusBadRequest)
-			return
-		}
+	completedValue, exists := body["is_completed"]
+	if extra := unknownFields(body, "is_completed"); len(extra) > 0 {
+		writeError(w, requestID, "BAD_REQUEST", "Unknown field.", []fieldError{{Field: extra[0], Code: "UNKNOWN", Message: "Field is not supported."}}, http.StatusBadRequest)
+		return
 	}
-
-	v, ok := raw["is_completed"]
-	if !ok {
+	if !exists {
 		writeError(w, requestID, "VALIDATION_FAILED", "Completion state is required.", []fieldError{{Field: "is_completed", Code: "REQUIRED", Message: "Completion state is required."}}, http.StatusUnprocessableEntity)
 		return
 	}
-	var done bool
-	if err := json.Unmarshal(v, &done); err != nil {
+	completed, ok := completedValue.(bool)
+	if !ok {
 		writeError(w, requestID, "VALIDATION_FAILED", "Completion state must be true or false.", []fieldError{{Field: "is_completed", Code: "TYPE", Message: "Completion state must be true or false."}}, http.StatusUnprocessableEntity)
 		return
 	}
-
 	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
 	defer cancel()
 	var t todo
-	err := a.pool.QueryRow(ctx, `UPDATE todos SET is_completed = $1, updated_at = now() WHERE id = $2 RETURNING id::text, title, is_completed, created_at, updated_at`, done, id).Scan(&t.ID, &t.Title, &t.IsCompleted, &t.CreatedAt, &t.UpdatedAt)
+	err := a.pool.QueryRow(ctx, `UPDATE todos SET is_completed = $1, updated_at = now() WHERE id = $2 RETURNING id::text, title, is_completed, created_at, updated_at`, completed, id).Scan(&t.ID, &t.Title, &t.IsCompleted, &t.CreatedAt, &t.UpdatedAt)
 	if errors.Is(err, pgx.ErrNoRows) {
 		writeError(w, requestID, "NOT_FOUND", "Task is no longer available.", nil, http.StatusNotFound)
 		return
@@ -260,7 +248,6 @@ func (a *api) deleteTodo(w http.ResponseWriter, r *http.Request, requestID, id s
 		writeError(w, requestID, "BAD_REQUEST", err.Error(), nil, http.StatusBadRequest)
 		return
 	}
-
 	ctx, cancel := context.WithTimeout(r.Context(), 2*time.Second)
 	defer cancel()
 	if _, err := a.pool.Exec(ctx, `DELETE FROM todos WHERE id = $1`, id); err != nil {
@@ -279,39 +266,85 @@ func (a *api) allow(w http.ResponseWriter, r *http.Request, requestID string) bo
 	return false
 }
 
-func decodeJSON(w http.ResponseWriter, r *http.Request, requestID string, dst any) bool {
-	if !strings.HasPrefix(strings.ToLower(r.Header.Get("Content-Type")), "application/json") {
+func readJSONBody(w http.ResponseWriter, r *http.Request, requestID string) (map[string]any, bool) {
+	if !strings.HasPrefix(r.Header.Get("Content-Type"), "application/json") {
 		writeError(w, requestID, "BAD_REQUEST", "Content-Type must be application/json.", nil, http.StatusBadRequest)
-		return false
+		return nil, false
 	}
 	r.Body = http.MaxBytesReader(w, r.Body, 16*1024)
-	dec := json.NewDecoder(r.Body)
-	if err := dec.Decode(dst); err != nil {
-		writeError(w, requestID, "BAD_REQUEST", "Request body must be valid JSON.", nil, http.StatusBadRequest)
-		return false
+	decoder := json.NewDecoder(r.Body)
+	decoder.UseNumber()
+	var body map[string]any
+	if err := decoder.Decode(&body); err != nil {
+		writeError(w, requestID, "BAD_REQUEST", "Request body must be valid JSON object.", nil, http.StatusBadRequest)
+		return nil, false
 	}
-	if err := dec.Decode(&struct{}{}); !errors.Is(err, io.EOF) {
+	if body == nil {
+		writeError(w, requestID, "BAD_REQUEST", "Request body must be valid JSON object.", nil, http.StatusBadRequest)
+		return nil, false
+	}
+	if decoder.Decode(&struct{}{}) != io.EOF {
 		writeError(w, requestID, "BAD_REQUEST", "Request body must contain one JSON object.", nil, http.StatusBadRequest)
-		return false
+		return nil, false
 	}
-	return true
+	return body, true
 }
 
 func rejectBodyForRead(r *http.Request) error {
-	if r.ContentLength == 0 || r.Body == nil {
+	if r.Body == nil || r.Body == http.NoBody {
 		return nil
 	}
-	if r.Header.Get("Content-Type") != "" && !strings.HasPrefix(strings.ToLower(r.Header.Get("Content-Type")), "application/json") {
+	if r.Header.Get("Content-Type") != "" && !strings.HasPrefix(r.Header.Get("Content-Type"), "application/json") {
 		return errors.New("Content-Type must be application/json.")
 	}
-	body, err := io.ReadAll(http.MaxBytesReader(nil, r.Body, 16*1024))
+	body, err := io.ReadAll(io.LimitReader(r.Body, 1))
 	if err != nil {
 		return errors.New("Request body must be empty.")
 	}
-	if strings.TrimSpace(string(body)) != "" {
+	if len(body) > 0 {
 		return errors.New("Request body must be empty.")
 	}
 	return nil
+}
+
+func unknownFields(body map[string]any, allowed ...string) []string {
+	allow := map[string]bool{}
+	for _, field := range allowed {
+		allow[field] = true
+	}
+	var extra []string
+	for field := range body {
+		if !allow[field] {
+			extra = append(extra, field)
+		}
+	}
+	sort.Strings(extra)
+	return extra
+}
+
+func writeDBError(w http.ResponseWriter, requestID string, err error) {
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) && strings.HasPrefix(pgErr.Code, "08") {
+		writeError(w, requestID, "UNAVAILABLE", "Service is unavailable.", nil, http.StatusServiceUnavailable)
+		return
+	}
+	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
+		writeError(w, requestID, "UNAVAILABLE", "Service is unavailable.", nil, http.StatusServiceUnavailable)
+		return
+	}
+	writeError(w, requestID, "INTERNAL", "Something went wrong.", nil, http.StatusInternalServerError)
+}
+
+func writeError(w http.ResponseWriter, requestID, code, message string, details []fieldError, status int) {
+	if details == nil {
+		details = []fieldError{}
+	}
+	var envelope errorEnvelope
+	envelope.Error.Code = code
+	envelope.Error.Message = message
+	envelope.Error.Details = details
+	envelope.Error.RequestID = requestID
+	writeJSON(w, status, envelope)
 }
 
 func writeJSON(w http.ResponseWriter, status int, value any) {
@@ -320,71 +353,21 @@ func writeJSON(w http.ResponseWriter, status int, value any) {
 	_ = json.NewEncoder(w).Encode(value)
 }
 
-func writeError(w http.ResponseWriter, requestID, code, message string, details []fieldError, status int) {
-	if details == nil {
-		details = []fieldError{}
-	}
-	var env errorEnvelope
-	env.Error.Code = code
-	env.Error.Message = message
-	env.Error.Details = details
-	env.Error.RequestID = requestID
-	writeJSON(w, status, env)
-}
-
-func writeDBError(w http.ResponseWriter, requestID string, err error) {
-	log.Printf("request_id=%s db_error=%T", requestID, err)
-	if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
-		writeError(w, requestID, "UNAVAILABLE", "Service is unavailable.", nil, http.StatusServiceUnavailable)
-		return
-	}
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) && strings.HasPrefix(pgErr.Code, "08") {
-		writeError(w, requestID, "UNAVAILABLE", "Service is unavailable.", nil, http.StatusServiceUnavailable)
-		return
-	}
-	writeError(w, requestID, "INTERNAL", "Unexpected error.", nil, http.StatusInternalServerError)
-}
-
 func ensureRequestID(w http.ResponseWriter, r *http.Request) string {
-	id := r.Header.Get("X-Request-Id")
-	if id == "" {
-		id = randomID()
+	requestID := strings.TrimSpace(r.Header.Get("X-Request-Id"))
+	if requestID == "" {
+		requestID = randomID()
 	}
-	w.Header().Set("X-Request-Id", id)
-	return id
+	w.Header().Set("X-Request-Id", requestID)
+	return requestID
 }
 
-func withCORS(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-Request-Id")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
-		if r.Method == http.MethodOptions {
-			w.WriteHeader(http.StatusNoContent)
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
-}
-
-func withRequestLog(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
-		rw := &responseWriter{ResponseWriter: w, status: http.StatusOK}
-		next.ServeHTTP(rw, r)
-		log.Printf("request_id=%s method=%s path=%s status=%d duration_ms=%d remote_addr=%s user_agent=%q", w.Header().Get("X-Request-Id"), r.Method, r.URL.Path, rw.status, time.Since(start).Milliseconds(), r.RemoteAddr, r.UserAgent())
-	})
-}
-
-type responseWriter struct {
-	http.ResponseWriter
-	status int
-}
-
-func (w *responseWriter) WriteHeader(status int) {
-	w.status = status
-	w.ResponseWriter.WriteHeader(status)
+func randomID() string {
+	var b [16]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		return fmt.Sprintf("%d", time.Now().UnixNano())
+	}
+	return hex.EncodeToString(b[:])
 }
 
 func isUUID(value string) bool {
@@ -406,12 +389,75 @@ func isUUID(value string) bool {
 	return true
 }
 
-func randomID() string {
-	var b [16]byte
-	if _, err := rand.Read(b[:]); err != nil {
-		return fmt.Sprintf("%d", time.Now().UnixNano())
+func firstSet(values ...string) string {
+	for _, value := range values {
+		if value != "" {
+			return value
+		}
 	}
-	return hex.EncodeToString(b[:])
+	return ""
+}
+
+func withCORS(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-Request-Id")
+		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PATCH, DELETE, OPTIONS")
+		if r.Method == http.MethodOptions {
+			w.WriteHeader(http.StatusNoContent)
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
+
+func withRequestLog(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		recorder := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
+		next.ServeHTTP(recorder, r)
+		log.Printf("request_id=%s method=%s path=%s status=%d duration_ms=%d remote_addr=%s user_agent=%q", w.Header().Get("X-Request-Id"), r.Method, r.URL.Path, recorder.status, time.Since(start).Milliseconds(), clientIP(r), r.UserAgent())
+	})
+}
+
+type statusRecorder struct {
+	http.ResponseWriter
+	status int
+}
+
+func (r *statusRecorder) WriteHeader(status int) {
+	r.status = status
+	r.ResponseWriter.WriteHeader(status)
+}
+
+type rateLimiter struct {
+	mu      sync.Mutex
+	limit   int
+	window  time.Duration
+	clients map[string][]time.Time
+}
+
+func newRateLimiter(limit int, window time.Duration) *rateLimiter {
+	return &rateLimiter{limit: limit, window: window, clients: map[string][]time.Time{}}
+}
+
+func (l *rateLimiter) allow(key string) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	now := time.Now()
+	cutoff := now.Add(-l.window)
+	kept := l.clients[key][:0]
+	for _, hit := range l.clients[key] {
+		if hit.After(cutoff) {
+			kept = append(kept, hit)
+		}
+	}
+	if len(kept) >= l.limit {
+		l.clients[key] = kept
+		return false
+	}
+	l.clients[key] = append(kept, now)
+	return true
 }
 
 func clientIP(r *http.Request) string {
@@ -420,45 +466,6 @@ func clientIP(r *http.Request) string {
 		return r.RemoteAddr
 	}
 	return host
-}
-
-type rateLimiter struct {
-	limit  int
-	window time.Duration
-	mu     sync.Mutex
-	hits   map[string][]time.Time
-}
-
-func newRateLimiter(limit int, window time.Duration) *rateLimiter {
-	return &rateLimiter{limit: limit, window: window, hits: map[string][]time.Time{}}
-}
-
-func (l *rateLimiter) allow(key string) bool {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	now := time.Now()
-	cutoff := now.Add(-l.window)
-	kept := []time.Time{}
-	for _, hit := range l.hits[key] {
-		if hit.After(cutoff) {
-			kept = append(kept, hit)
-		}
-	}
-	if len(kept) >= l.limit {
-		l.hits[key] = kept
-		return false
-	}
-	l.hits[key] = append(kept, now)
-	return true
-}
-
-func firstSet(values ...string) string {
-	for _, value := range values {
-		if value != "" {
-			return value
-		}
-	}
-	return ""
 }
 
 func applyMigrations(ctx context.Context, pool *pgxpool.Pool) error {
@@ -470,7 +477,8 @@ func applyMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 	if err != nil {
 		return err
 	}
-	names := []string{}
+
+	var names []string
 	for _, entry := range entries {
 		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".up.sql") {
 			names = append(names, entry.Name())
@@ -491,6 +499,7 @@ func applyMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 		if err != nil {
 			return err
 		}
+
 		tx, err := pool.Begin(ctx)
 		if err != nil {
 			return err
