@@ -32,6 +32,8 @@ flowchart LR
 - Timestamps: RFC 3339 UTC strings with `_at` suffix.
 - Request body cap: 16 KiB for todo write endpoints.
 
+Reviewed Toggle task completion UI mock uses `TodoTask` with `id`, `title`, `is_completed`, `created_at`, and `updated_at`, list envelope `{ tasks, next_cursor, has_more }`, and project error envelope `{ error: { code, message, details, request_id } }`. API contract below preserves that shape.
+
 ### 2.2 Authentication and authorization
 
 | Aspect | Decision |
@@ -235,6 +237,8 @@ Location: /api/v1/todos/550e8400-e29b-41d4-a716-446655440000
 
 **Purpose** — Set completion state for one todo. **Traces to** — TODOS-003. **Auth** — visitor.
 
+This endpoint matches reviewed Toggle task completion UI mock `buildToggleTaskCompletionSuccess(task, isCompleted): TodoTask`: response is one todo object with same fields as list item and changed `is_completed` plus new `updated_at`.
+
 **Path / query parameters**
 
 | Name | In | Type | Required | Constraints | Description |
@@ -286,6 +290,36 @@ Unknown request fields are ignored for additive compatibility. Omitted fields me
 | `INTERNAL` | 500 | Unexpected server error. |
 | `UNAVAILABLE` | 503 | Database unavailable or server shutting down. |
 
+**Error response examples**
+
+Not found:
+
+```json
+{
+  "error": {
+    "code": "NOT_FOUND",
+    "message": "Task is no longer available.",
+    "details": [],
+    "request_id": "01HX0000000000000000000000"
+  }
+}
+```
+
+Validation failure:
+
+```json
+{
+  "error": {
+    "code": "VALIDATION_FAILED",
+    "message": "Completion state is required.",
+    "details": [
+      { "field": "is_completed", "code": "REQUIRED", "message": "Completion state is required." }
+    ],
+    "request_id": "01HX0000000000000000000000"
+  }
+}
+```
+
 **Notes** — side effect: updates `is_completed` and `updated_at`. Timeout: API aborts update after 2 seconds. No server retry; request is explicit-set and safe for frontend retry, but automatic retry is skipped to avoid fighting user repeated toggles. Frontend disables or serializes toggles while request is pending and rolls back visible state on failure.
 
 ### 3.4 `DELETE /api/v1/todos/{todo_id}`
@@ -307,7 +341,7 @@ No request body. If a body is sent, server ignores it only when empty; malformed
 No response body.
 
 | Field | Type | Nullable | Description |
-|---|---|---|---|
+|---|---|---|
 | none | none | none | No body on success. |
 
 **Errors** — every code this endpoint can return. No others.
@@ -416,7 +450,16 @@ No third-party integrations exist. No secrets or provider setup required beyond 
 | `DELETE /api/v1/todos/{todo_id}` | TODOS-004 |
 | `GET /healthz` | Architecture overview runtime contract |
 
-## 10. Open questions
+## 10. Migration plan for Toggle task completion
+
+| Step | Forward | Backward | Safe on populated table |
+|---|---|---|---|
+| 1 | Reuse existing `todos.is_completed boolean NOT NULL DEFAULT false` and `todos.updated_at timestamptz NOT NULL DEFAULT now()` from initial migration. | No schema rollback required because no schema change is made. | Yes. Existing rows already have required values. |
+| 2 | Backend code handles `PATCH /api/v1/todos/{todo_id}` by UUID primary key update and returns one todo object. | Revert backend endpoint code if story is rolled back; stored completion values remain valid todo data. | Yes. Updates one row by primary key and does not rewrite table. |
+
+No data backfill, new table, new column, new index, foreign key, or enum needed for this story.
+
+## 11. Open questions
 
 | Question | Owner | Blocking |
 |---|---|---|
