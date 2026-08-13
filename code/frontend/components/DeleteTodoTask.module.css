@@ -1,0 +1,280 @@
+.panel {
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: var(--space-11);
+  background: var(--color-card-surface);
+  box-shadow: var(--shadow-xl);
+  color: var(--color-text);
+}
+
+.header {
+  display: grid;
+  gap: var(--space-8);
+}
+
+.eyebrow {
+  display: inline-flex;
+  margin: var(--space-0) var(--space-0) var(--space-8);
+  padding: var(--space-4) var(--space-6);
+  border: var(--border-width) solid var(--color-border-primary-soft);
+  border-radius: var(--radius-full);
+  background: var(--color-bg-tint-primary);
+  color: var(--color-primary);
+  font-size: var(--text-base);
+}
+
+.title {
+  margin: var(--space-0);
+  font-size: var(--text-panel-title);
+}
+
+.muted {
+  margin: var(--space-4) var(--space-0) var(--space-0);
+  color: var(--color-text-muted);
+  font-size: var(--text-base);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+}
+
+.secondaryButton,
+.deleteButton,
+.toggle {
+  border: var(--border-width) solid var(--color-border);
+  font-size: var(--text-base);
+  cursor: pointer;
+  transition: transform var(--duration-fast) var(--easing), background-color var(--duration-fast) var(--easing), color var(--duration-fast) var(--easing);
+}
+
+.secondaryButton {
+  min-height: var(--space-22);
+  padding: var(--space-7) var(--space-9);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.secondaryButton:hover,
+.deleteButton:hover:not(:disabled) {
+  transform: translateY(calc(var(--space-1) * -1));
+}
+
+.secondaryButton:focus-visible,
+.deleteButton:focus-visible,
+.toggle:focus-visible,
+.failToggle input:focus-visible {
+  outline: var(--border-width-focus) solid var(--color-focus);
+  outline-offset: var(--border-width-focus);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-6);
+  margin: var(--space-10) var(--space-0);
+}
+
+.stats div {
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-7-5);
+  background: var(--color-bg);
+}
+
+.stats dt {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.stats dd {
+  margin: var(--space-0);
+  color: var(--color-text);
+  font-size: var(--text-stat);
+}
+
+.failToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-6);
+  color: var(--color-text-muted);
+  font-size: var(--text-base);
+}
+
+.failToggle input {
+  width: var(--space-9);
+  height: var(--space-9);
+  accent-color: var(--color-primary);
+}
+
+.inlineError {
+  margin: var(--space-8) var(--space-0) var(--space-0);
+  color: var(--color-danger-text);
+  font-size: var(--text-helper);
+}
+
+.list {
+  margin-top: var(--space-10);
+}
+
+.tasks {
+  display: grid;
+  gap: var(--space-6);
+  margin: var(--space-0);
+  padding: var(--space-0);
+  list-style: none;
+}
+
+.taskOpen,
+.taskDone {
+  display: grid;
+  grid-template-columns: var(--space-17) 1fr auto;
+  align-items: center;
+  gap: var(--space-6);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  animation: enter var(--duration-enter) var(--easing);
+}
+
+.taskOpen {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.taskDone {
+  border-color: var(--color-border-success);
+  background: var(--color-bg-success);
+  color: var(--color-text-muted);
+}
+
+.toggle {
+  width: var(--space-17);
+  height: var(--space-17);
+  border: var(--border-width-strong) solid var(--color-border-primary);
+  border-radius: var(--radius-xs);
+  background: var(--color-surface);
+  color: var(--color-primary-text);
+}
+
+.taskDone .toggle {
+  border-color: var(--color-success);
+  background: var(--color-success);
+}
+
+.taskTitle {
+  color: inherit;
+  font-size: var(--text-base);
+}
+
+.deleteButton {
+  min-height: var(--space-22);
+  padding: var(--space-4) var(--space-5);
+  border: var(--border-width) solid var(--color-bg-danger);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-danger);
+  color: var(--color-danger-text);
+}
+
+.deleteButton:hover:not(:disabled) {
+  background: var(--color-bg-danger-hover);
+}
+
+.deleteButton:disabled,
+.toggle:disabled {
+  border-color: var(--color-border);
+  background: var(--color-bg);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+}
+
+.stateLoading,
+.stateEmpty,
+.stateError {
+  border: var(--border-width) solid;
+  border-radius: var(--radius-xl);
+  padding: var(--space-9);
+  font-size: var(--text-base);
+}
+
+.stateLoading {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  border-color: var(--color-border-primary-soft);
+  background: var(--color-bg-tint-primary);
+  color: var(--color-text-primary-strong);
+}
+
+.spinner {
+  width: var(--space-11);
+  height: var(--space-11);
+  border: var(--border-width-focus) solid var(--color-border-primary-soft);
+  border-top-color: var(--color-primary);
+  border-radius: var(--radius-full);
+  animation: spin var(--duration-load) var(--easing-spinner) infinite;
+}
+
+.stateEmpty {
+  text-align: center;
+  border-color: var(--color-border-primary-soft);
+  background: var(--color-bg-tint-primary);
+  color: var(--color-text-muted);
+}
+
+.emptyArt {
+  width: var(--space-50);
+  height: var(--space-37);
+  margin: var(--space-0) auto var(--space-8);
+  border: var(--border-width) solid var(--color-border-primary-soft);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-primary-badge);
+}
+
+.stateEmpty h3,
+.stateError h3 {
+  margin: var(--space-0) var(--space-0) var(--space-4);
+  color: var(--color-text);
+  font-size: var(--text-card-title);
+}
+
+.stateEmpty p,
+.stateError p {
+  margin: var(--space-0) var(--space-0) var(--space-8);
+}
+
+.stateError {
+  border-color: var(--color-border-danger);
+  background: var(--color-bg-danger);
+  color: var(--color-danger-strong);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes enter {
+  from { opacity: 0; transform: translateY(var(--space-4)); }
+  to { opacity: 1; transform: translateY(var(--space-0)); }
+}
+
+@media (min-width: 820px) {
+  .header {
+    grid-template-columns: 1fr auto;
+    align-items: start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .secondaryButton,
+  .deleteButton,
+  .toggle,
+  .taskOpen,
+  .taskDone,
+  .spinner {
+    animation: none;
+    transition: none;
+  }
+}
