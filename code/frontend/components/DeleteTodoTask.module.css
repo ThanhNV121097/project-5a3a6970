@@ -21,13 +21,11 @@
   background: var(--color-bg-tint-primary);
   color: var(--color-primary);
   font-size: var(--text-base);
-  font-weight: 700;
 }
 
 .title {
   margin: var(--space-0);
   font-size: var(--text-panel-title);
-  line-height: 1.5;
 }
 
 .muted {
@@ -89,14 +87,12 @@
 .stats dt {
   color: var(--color-text-muted);
   font-size: var(--text-sm);
-  font-weight: 700;
 }
 
 .stats dd {
   margin: var(--space-0);
   color: var(--color-text);
   font-size: var(--text-stat);
-  font-weight: 700;
 }
 
 .failToggle {
@@ -117,7 +113,6 @@
   margin: var(--space-8) var(--space-0) var(--space-0);
   color: var(--color-danger-text);
   font-size: var(--text-helper);
-  font-weight: 700;
 }
 
 .list {
@@ -177,7 +172,7 @@
 .deleteButton {
   min-height: var(--space-22);
   padding: var(--space-4) var(--space-5);
-  border: var(--border-width) solid transparent;
+  border: var(--border-width) solid var(--color-bg-danger);
   border-radius: var(--radius-md);
   background: var(--color-bg-danger);
   color: var(--color-danger-text);
