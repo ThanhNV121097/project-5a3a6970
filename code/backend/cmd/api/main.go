@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"embed"
 	"errors"
 	"fmt"
 	"log"
@@ -12,11 +11,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ThanhNV121097/project-5a3a6970/backend/migrations"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
-
-//go:embed ../../migrations/*.up.sql
-var migrationFiles embed.FS
 
 func main() {
 	databaseURL := os.Getenv("DATABASE_URL")
@@ -77,7 +74,7 @@ func applyMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 		return err
 	}
 
-	entries, err := migrationFiles.ReadDir("../../migrations")
+	entries, err := migrations.Files.ReadDir(".")
 	if err != nil {
 		return err
 	}
@@ -99,7 +96,7 @@ func applyMigrations(ctx context.Context, pool *pgxpool.Pool) error {
 			continue
 		}
 
-		sqlBytes, err := migrationFiles.ReadFile("../../migrations/" + name)
+		sqlBytes, err := migrations.Files.ReadFile(name)
 		if err != nil {
 			return err
 		}
