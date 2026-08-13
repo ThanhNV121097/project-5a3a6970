@@ -8,6 +8,8 @@ Source requirements: `docs/todos/SRS.md`
 
 This schema stores saved todo tasks for one personal list with no authentication, no account ownership, and no sharing. `todos` is the only aggregate root because each task has independent identity, lifecycle, completion state, and timestamps. User accounts, tags, due dates, priorities, search metadata, audit history, and soft-delete records are deliberately out of scope.
 
+Toggle task completion uses existing `todos.is_completed` and `todos.updated_at` fields. Reviewed UI mock contract for Toggle task completion uses `id`, `title`, `is_completed`, `created_at`, and `updated_at`; no additional persisted fields are needed.
+
 ## 2. Diagram
 
 ```mermaid
@@ -33,7 +35,7 @@ Relationships: none. SRS explicitly excludes authentication, user accounts, tags
 |---|---|---|---|---|---|
 | `id` | `uuid` | no | `gen_random_uuid()` | PK | Stable task identifier used to update or delete correct task. |
 | `title` | `text` | no | none | no | Trimmed task title shown exactly as saved; duplicate titles allowed. |
-| `is_completed` | `boolean` | no | `false` | no | Completion state; new tasks start incomplete. |
+| `is_completed` | `boolean` | no | `false` | no | Completion state; new tasks start incomplete and toggle updates set this explicit boolean value. |
 | `created_at` | `timestamptz` | no | `now()` | no | Creation time used for newest-first ordering. |
 | `updated_at` | `timestamptz` | no | `now()` | no | Last update time; changes when completion state changes. |
 
@@ -50,11 +52,15 @@ Relationships: none. SRS explicitly excludes authentication, user accounts, tags
 - `ck_todos_title_length`: `CHECK (char_length(title) BETWEEN 1 AND 120)` enforces TODOS-001 title boundary after application trim.
 - `ck_todos_title_trimmed`: `CHECK (title = btrim(title))` prevents untrimmed persisted titles and protects list display consistency.
 
+No check constraint is needed for `is_completed` because PostgreSQL `boolean NOT NULL DEFAULT false` fully enforces the two allowed states.
+
 **Indexes**
 
 | Name | Columns | Type | Query it serves |
 |---|---|---|---|
 | `idx_todos_created_at_id` | `created_at DESC, id DESC` | btree | List saved tasks newest first for TODOS-002. `id` gives stable tie-break order when timestamps match. |
+
+Toggle updates use the primary key index on `todos.id`; no `is_completed` index exists because the UI has no filter by completion state and all visible tasks are already loaded by newest-first list.
 
 **Lifecycle** — hard delete. TODOS-004 requires deleted tasks disappear from persistence and stay gone; no audit, reports, billing, undo, or retention requirement exists.
 
@@ -87,6 +93,7 @@ No table is expected to exceed 10M rows within a year. Pagination, partitioning,
 
 - Database enforces stable primary keys, required title, title length, trimmed title, required completion state, and required timestamps. Application still trims input and returns user-friendly validation errors because boundary validation happens at API edge too.
 - Application enforces rapid-submit, repeated-toggle, repeated-delete, and optimistic rollback behavior because those are interaction rules, not database invariants.
+- Toggle writes set `is_completed` explicitly from request body rather than flipping in SQL, so repeated requests are replay-safe for the same desired state.
 - Stored personal data is limited to `todos.title`; retention is hard delete when visitor deletes task.
 - No secrets are stored.
 - No row-level access rule exists because no sign-in, users, roles, or per-account task lists exist in scope. If auth is added later, schema must add ownership requirements before implementation.
@@ -98,8 +105,9 @@ No table is expected to exceed 10M rows within a year. Pagination, partitioning,
 | 1 | Enable UUID generation | `CREATE EXTENSION IF NOT EXISTS pgcrypto;` in `000001_init.up.sql` | No extension drop in down migration; extension may be shared by other objects | Safe. Idempotent extension creation; down intentionally leaves extension installed to avoid breaking shared dependency. |
 | 2 | Initial `todos` table | `CREATE TABLE todos (...)` with primary key, defaults, `NOT NULL`, and checks in `000001_init.up.sql` | `DROP TABLE IF EXISTS todos;` in `000001_init.down.sql` | Safe on empty database. On populated database, backward migration is destructive and must only run in rollback/test environments. |
 | 3 | Newest-first list index | `CREATE INDEX idx_todos_created_at_id ON todos (created_at DESC, id DESC);` in `000001_init.up.sql` | Dropped with table in `000001_init.down.sql` | Safe at launch. If added later to populated production table, use `CREATE INDEX CONCURRENTLY`. |
+| 4 | Toggle task completion support | No schema migration beyond #2 because `is_completed boolean NOT NULL DEFAULT false` and `updated_at timestamptz NOT NULL DEFAULT now()` already exist | No schema rollback because no schema change exists | Safe on populated table. Existing rows already have non-null completion and update timestamps by table definition. |
 
-Initial migration creates new objects only, so forward path is safe on an empty or populated database with no conflicting `todos` table. Backward path deletes todo data; acceptable only before production data or in explicit rollback with data loss accepted.
+Initial migration creates new objects only, so forward path is safe on an empty or populated database with no conflicting `todos` table. Backward path deletes todo data; acceptable only before production data or in explicit rollback with data loss accepted. Toggle task completion adds no new schema object and needs only backend code using access pattern #3.
 
 ## 9. Open questions
 
