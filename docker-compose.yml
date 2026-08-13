@@ -28,6 +28,7 @@ services:
       retries: 10
 
   backend:
+    profiles: ["local"]
     image: ${IMAGE_REPO:-local}/backend:${IMAGE_TAG:-dev}
     build:
       context: code/backend
@@ -52,6 +53,7 @@ services:
       start_period: 15s
 
   frontend:
+    profiles: ["local"]
     image: ${IMAGE_REPO:-local}/frontend:${IMAGE_TAG:-dev}
     build:
       context: code/frontend
