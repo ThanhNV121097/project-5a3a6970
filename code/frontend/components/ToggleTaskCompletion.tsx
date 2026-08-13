@@ -2,19 +2,19 @@
 
 import { useEffect, useState } from 'react';
 import {
-  buildToggleTaskCompletionSuccess,
-  toggleTaskCompletionEmptyResponse,
-  toggleTaskCompletionErrorResponse,
-  toggleTaskCompletionInitialResponse,
+  getToggleTaskCompletionErrorMessage,
+  loadToggleTaskCompletionTasks,
+  saveToggleTaskCompletion,
   type TodoTask,
-} from '../lib/mock/toggle-task-completion';
+  type ViewState,
+} from '../lib/toggle-task-completion';
 import styles from './ToggleTaskCompletion.module.css';
 
-type ViewState = 'default' | 'loading' | 'empty' | 'error';
+const demoDelayMs = 650;
 
 export function ToggleTaskCompletion() {
   const [viewState, setViewState] = useState<ViewState>('loading');
-  const [tasks, setTasks] = useState<TodoTask[]>(toggleTaskCompletionInitialResponse.tasks);
+  const [tasks, setTasks] = useState<TodoTask[]>(loadToggleTaskCompletionTasks('default').tasks);
   const [pendingTaskId, setPendingTaskId] = useState<string | null>(null);
   const [message, setMessage] = useState('Loading tasks from database…');
   const [failNextToggle, setFailNextToggle] = useState(false);
@@ -24,7 +24,7 @@ export function ToggleTaskCompletion() {
     const timer = window.setTimeout(() => {
       setViewState('default');
       setMessage('Tasks loaded. Completion changes will be saved.');
-    }, 650);
+    }, demoDelayMs);
 
     return () => window.clearTimeout(timer);
   }, []);
@@ -38,15 +38,15 @@ export function ToggleTaskCompletion() {
       setViewState('loading');
       setMessage('Loading tasks from database…');
       window.setTimeout(() => {
-        setTasks(toggleTaskCompletionInitialResponse.tasks);
+        setTasks(loadToggleTaskCompletionTasks('default').tasks);
         setViewState('default');
         setMessage('Tasks loaded. Completion changes will be saved.');
-      }, 650);
+      }, demoDelayMs);
       return;
     }
 
     if (state === 'empty') {
-      setTasks(toggleTaskCompletionEmptyResponse.tasks);
+      setTasks(loadToggleTaskCompletionTasks('empty').tasks);
       setViewState('empty');
       setMessage('No tasks yet. Add one task to start.');
       return;
@@ -54,11 +54,11 @@ export function ToggleTaskCompletion() {
 
     if (state === 'error') {
       setViewState('error');
-      setMessage(toggleTaskCompletionErrorResponse.error.message);
+      setMessage(getToggleTaskCompletionErrorMessage());
       return;
     }
 
-    setTasks(toggleTaskCompletionInitialResponse.tasks);
+    setTasks(loadToggleTaskCompletionTasks('default').tasks);
     setViewState('default');
     setMessage('Tasks loaded. Completion changes will be saved.');
   }
@@ -89,11 +89,11 @@ export function ToggleTaskCompletion() {
         return;
       }
 
-      const savedTask = buildToggleTaskCompletionSuccess(task, nextCompleted);
+      const savedTask = saveToggleTaskCompletion(task, nextCompleted);
       setTasks((currentTasks) => currentTasks.map((item) => (item.id === task.id ? savedTask : item)));
       setPendingTaskId(null);
       setMessage(`${task.title} saved as ${nextCompleted ? 'complete' : 'incomplete'}.`);
-    }, 650);
+    }, demoDelayMs);
   }
 
   return (
