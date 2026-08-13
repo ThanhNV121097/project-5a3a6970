@@ -1,0 +1,300 @@
+.panel {
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: var(--space-11);
+  background: var(--color-card-surface);
+  box-shadow: var(--shadow-xl);
+  display: grid;
+  gap: var(--space-10);
+  color: var(--color-text);
+  font-size: var(--text-base);
+  line-height: 1.5;
+}
+
+.header {
+  display: grid;
+  gap: var(--space-8);
+}
+
+.eyebrow {
+  display: inline-flex;
+  margin: var(--space-0) var(--space-0) var(--space-8);
+  padding: var(--space-4) var(--space-6);
+  border: var(--border-width) solid var(--color-border-primary-soft);
+  border-radius: var(--radius-full);
+  color: var(--color-primary);
+  background: var(--color-bg-tint-primary);
+  font-size: var(--text-base);
+  font-weight: 700;
+}
+
+.title {
+  margin: var(--space-0);
+  font-size: var(--text-section-title);
+  line-height: 1.5;
+}
+
+.copy,
+.help,
+.taskState,
+.emptyBox p,
+.errorBox p {
+  margin: var(--space-0);
+  color: var(--color-text-muted);
+}
+
+.controls,
+.formRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+}
+
+.form {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.label {
+  color: var(--color-text);
+  font-size: var(--text-base);
+  font-weight: 700;
+}
+
+.input {
+  min-width: var(--space-0);
+  flex: 1 1 var(--space-50);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-7) var(--space-7-5);
+  color: var(--color-text);
+  background: var(--color-bg);
+  font: inherit;
+}
+
+.input:focus-visible,
+.primaryButton:focus-visible,
+.secondaryButton:focus-visible {
+  outline: var(--border-width-focus) solid var(--color-focus);
+  outline-offset: var(--border-width-focus);
+}
+
+.input:focus-visible {
+  background: var(--color-surface);
+}
+
+.primaryButton,
+.secondaryButton {
+  min-height: var(--space-22);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-full);
+  padding: var(--space-7) var(--space-9);
+  font: inherit;
+  cursor: pointer;
+  transition: transform var(--duration-fast) var(--easing), background var(--duration-fast) var(--easing), color var(--duration-fast) var(--easing);
+}
+
+.primaryButton:hover,
+.secondaryButton:hover {
+  transform: translateY(calc(var(--space-1) * -1));
+}
+
+.primaryButton {
+  border-color: var(--color-primary);
+  color: var(--color-primary-text);
+  background: var(--color-primary);
+  box-shadow: var(--shadow-lg);
+}
+
+.primaryButton:hover {
+  background: var(--color-primary-hover);
+}
+
+.secondaryButton {
+  color: var(--color-text);
+  background: var(--color-surface);
+}
+
+.secondaryButton:hover {
+  background: var(--color-bg-tint-primary);
+  color: var(--color-primary);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(var(--space-0), 1fr));
+  gap: var(--space-6);
+}
+
+.stat {
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-7-5);
+  background: var(--color-bg);
+  text-align: center;
+}
+
+.stat strong,
+.stat span {
+  display: block;
+}
+
+.stat strong {
+  color: var(--color-text);
+  font-size: var(--text-stat);
+  line-height: 1.5;
+}
+
+.stat span {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.loadingBox,
+.emptyBox,
+.errorBox {
+  border-radius: var(--radius-xl);
+  padding: var(--space-9);
+  font-size: var(--text-base);
+}
+
+.loadingBox {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+  border: var(--border-width) solid var(--color-border-primary-soft);
+  color: var(--color-text-primary-strong);
+  background: var(--color-bg-tint-primary);
+}
+
+.spinner {
+  width: var(--space-11);
+  height: var(--space-11);
+  border: var(--border-width-focus) solid var(--color-border-primary-soft);
+  border-top-color: var(--color-primary);
+  border-radius: var(--radius-full);
+  animation: spin var(--duration-load) var(--easing-spinner) infinite;
+}
+
+.emptyBox {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-6);
+  border: var(--border-width) solid var(--color-border-primary-soft);
+  color: var(--color-text);
+  background: var(--color-bg-tint-primary);
+  text-align: center;
+}
+
+.emptyBox h3,
+.errorBox h3 {
+  margin: var(--space-0);
+  font-size: var(--text-card-title);
+  line-height: 1.5;
+}
+
+.illustration {
+  width: var(--space-50);
+  height: var(--space-37);
+  border: var(--border-width) solid var(--color-border-primary-soft);
+  border-radius: var(--radius-xl);
+  background: var(--color-bg-primary-badge);
+}
+
+.errorBox {
+  display: grid;
+  gap: var(--space-6);
+  border: var(--border-width) solid var(--color-border-danger);
+  color: var(--color-danger-strong);
+  background: var(--color-bg-danger);
+}
+
+.list {
+  display: grid;
+  gap: var(--space-6);
+  margin: var(--space-0);
+  padding: var(--space-0);
+  list-style: none;
+}
+
+.itemOpen,
+.itemDone {
+  display: grid;
+  grid-template-columns: var(--space-17) minmax(var(--space-0), 1fr);
+  gap: var(--space-6);
+  align-items: center;
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  background: var(--color-bg);
+  animation: enter var(--duration-enter) var(--easing);
+}
+
+.itemDone {
+  border-color: var(--color-border-success);
+  background: var(--color-bg-success);
+}
+
+.toggle {
+  display: inline-grid;
+  place-items: center;
+  width: var(--space-17);
+  height: var(--space-17);
+  border: var(--border-width-strong) solid var(--color-border-primary);
+  border-radius: var(--radius-md);
+  color: var(--color-primary-text);
+  background: var(--color-surface);
+  font-size: var(--text-base);
+}
+
+.itemDone .toggle {
+  border-color: var(--color-success);
+  background: var(--color-success);
+}
+
+.taskText {
+  min-width: var(--space-0);
+  display: grid;
+  gap: var(--space-1);
+}
+
+.taskTitle {
+  overflow-wrap: anywhere;
+  color: var(--color-text);
+  font-size: var(--text-base);
+}
+
+.itemDone .taskTitle {
+  color: var(--color-text-muted);
+  text-decoration-line: line-through;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes enter {
+  from { opacity: var(--space-0); transform: translateY(var(--space-3)); }
+  to { opacity: 1; transform: translateY(var(--space-0)); }
+}
+
+@media (min-width: 900px) {
+  .header {
+    grid-template-columns: minmax(var(--space-0), 1fr) auto;
+    align-items: start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner,
+  .itemOpen,
+  .itemDone {
+    animation: none;
+  }
+
+  .primaryButton,
+  .secondaryButton {
+    transition: none;
+  }
+}
