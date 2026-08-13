@@ -97,6 +97,11 @@ h1 { max-width: 760px; font-size: clamp(42px, 7vw, 76px); line-height: .94; }
   cursor: pointer;
 }
 
+.btn:disabled, .toggle-task:disabled, .delete-task:disabled {
+  cursor: wait;
+  opacity: .7;
+}
+
 .input {
   width: 100%;
   border: 1px solid var(--color-border);
@@ -104,6 +109,57 @@ h1 { max-width: 760px; font-size: clamp(42px, 7vw, 76px); line-height: .94; }
   padding: 13px 14px;
   color: var(--color-text);
   background: var(--color-bg);
+}
+
+.todo-form {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.todo-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 10px;
+}
+
+.todo-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: 18px;
+  padding: 12px;
+  background: var(--color-surface);
+}
+
+.todo-item.done span {
+  color: var(--color-text-muted);
+  text-decoration: line-through;
+}
+
+.toggle-task, .delete-task {
+  min-height: 40px;
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.toggle-task[aria-pressed="true"] {
+  border-color: var(--color-success);
+  background: var(--color-bg-success);
+}
+
+.delete-task {
+  color: var(--color-danger-text);
+  background: var(--color-bg-danger);
 }
 
 .state-box {
@@ -114,6 +170,10 @@ h1 { max-width: 760px; font-size: clamp(42px, 7vw, 76px); line-height: .94; }
 }
 
 .error { color: var(--color-danger-text); }
+
+@media (max-width: 640px) {
+  .todo-form { grid-template-columns: 1fr; }
+}
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
