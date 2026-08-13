@@ -26,11 +26,9 @@ export default function DeleteTodoTask() {
 
     try {
       await deleteTodoMock(task.id, failNextDelete);
-      setTasks((current) => {
-        const next = current.filter((item) => item.id !== task.id);
-        if (next.length === 0) setViewState('empty');
-        return next;
-      });
+      const next = tasks.filter((item) => item.id !== task.id);
+      setTasks(next);
+      if (next.length === 0) setViewState('empty');
       setFailNextDelete(false);
     } catch {
       setMessage('Delete was not saved. Task remains in list. Try again.');
