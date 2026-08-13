@@ -21,10 +21,15 @@ export default function Page() {
   const [message, setMessage] = useState("");
 
   async function load() {
-    setLoading(true); setMessage("");
-    try { setTasks((await api<TodoList>("/api/v1/todos")).tasks); }
-    catch { setMessage("Tasks could not load."); }
-    finally { setLoading(false); }
+    setLoading(true);
+    setMessage("");
+    try {
+      setTasks((await api<TodoList>("/api/v1/todos")).tasks);
+    } catch {
+      setMessage("Tasks could not load.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => { void load(); }, []);
@@ -32,27 +37,51 @@ export default function Page() {
   async function addTask(event: FormEvent) {
     event.preventDefault();
     const trimmed = title.trim();
-    if (!trimmed || trimmed.length > 120) { setMessage("Title must be 1 to 120 characters."); return; }
-    setPending("new"); setMessage("");
-    try { const task = await api<TodoTask>("/api/v1/todos", { method: "POST", body: JSON.stringify({ title: trimmed }) }); setTasks([task, ...tasks]); setTitle(""); }
-    catch { setMessage("Task was not saved."); }
-    finally { setPending(null); }
+    if (!trimmed || trimmed.length > 120) {
+      setMessage("Title must be 1 to 120 characters.");
+      return;
+    }
+    setPending("new");
+    setMessage("");
+    try {
+      const task = await api<TodoTask>("/api/v1/todos", { method: "POST", body: JSON.stringify({ title: trimmed }) });
+      setTasks((current) => [task, ...current]);
+      setTitle("");
+    } catch {
+      setMessage("Task was not saved.");
+    } finally {
+      setPending(null);
+    }
   }
 
   async function toggleTask(task: TodoTask) {
     const next = !task.is_completed;
-    setPending(task.id); setMessage("");
-    setTasks(tasks.map((t) => t.id === task.id ? { ...t, is_completed: next } : t));
-    try { const saved = await api<TodoTask>(`/api/v1/todos/${task.id}`, { method: "PATCH", body: JSON.stringify({ is_completed: next }) }); setTasks((current) => current.map((t) => t.id === task.id ? saved : t)); }
-    catch (error) { setTasks((current) => current.map((t) => t.id === task.id ? task : t)); setMessage(error instanceof Error ? error.message : "Change was not saved."); if (error instanceof Error && error.message.includes("no longer")) void load(); }
-    finally { setPending(null); }
+    setPending(task.id);
+    setMessage("");
+    setTasks((current) => current.map((t) => t.id === task.id ? { ...t, is_completed: next } : t));
+    try {
+      const saved = await api<TodoTask>(`/api/v1/todos/${task.id}`, { method: "PATCH", body: JSON.stringify({ is_completed: next }) });
+      setTasks((current) => current.map((t) => t.id === task.id ? saved : t));
+    } catch (error) {
+      setTasks((current) => current.map((t) => t.id === task.id ? task : t));
+      setMessage(error instanceof Error ? error.message : "Change was not saved.");
+      if (error instanceof Error && error.message.includes("no longer")) void load();
+    } finally {
+      setPending(null);
+    }
   }
 
   async function deleteTask(task: TodoTask) {
-    setPending(task.id); setMessage("");
-    try { await api<void>(`/api/v1/todos/${task.id}`, { method: "DELETE" }); setTasks(tasks.filter((t) => t.id !== task.id)); }
-    catch { setMessage("Task was not deleted."); }
-    finally { setPending(null); }
+    setPending(task.id);
+    setMessage("");
+    try {
+      await api<void>(`/api/v1/todos/${task.id}`, { method: "DELETE" });
+      setTasks((current) => current.filter((t) => t.id !== task.id));
+    } catch {
+      setMessage("Task was not deleted.");
+    } finally {
+      setPending(null);
+    }
   }
 
   const done = tasks.filter((task) => task.is_completed).length;
@@ -60,7 +89,8 @@ export default function Page() {
   return (
     <main className="shell">
       <section className="hero-card" aria-labelledby="page-title">
-        <p className="eyebrow">Personal task manager</p><h1 id="page-title">Todo App</h1>
+        <p className="eyebrow">Personal task manager</p>
+        <h1 id="page-title">Todo App</h1>
         <p className="lede">Add tasks, keep track of progress, and return later with your list still saved.</p>
       </section>
       <section className="panel" aria-labelledby="tasks-title">
