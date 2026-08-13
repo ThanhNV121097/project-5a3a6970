@@ -5,10 +5,15 @@ import { FormEvent, useEffect, useState } from "react";
 type TodoTask = { id: string; title: string; is_completed: boolean; created_at: string; updated_at: string };
 type TodoList = { tasks: TodoTask[]; next_cursor: string | null; has_more: boolean };
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+const API = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080").replace(/\/$/, "");
+
+function apiPath(path: string) {
+  return `${API}${API.endsWith("/api") && path.startsWith("/api/") ? path.slice(4) : path}`;
+}
 
 async function api<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API}${path}`, { ...init, headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) } });
+  const headers = init?.body ? { "Content-Type": "application/json", ...(init.headers ?? {}) } : init?.headers;
+  const res = await fetch(apiPath(path), { ...init, headers });
   if (!res.ok) throw new Error(res.status === 404 ? "Task is no longer available." : "Change was not saved.");
   return res.status === 204 ? (undefined as T) : res.json();
 }
